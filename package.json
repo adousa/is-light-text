@@ -36,6 +36,14 @@
     "a11y",
     "rgb"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adousa/is-light-text.git"
+  },
+  "homepage": "https://github.com/adousa/is-light-text#readme",
+  "bugs": {
+    "url": "https://github.com/adousa/is-light-text/issues"
+  },
   "license": "MIT",
   "author": "Ahmed Dousa <aa.dousa@gmail.com>",
   "devDependencies": {
