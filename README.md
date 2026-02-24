@@ -4,6 +4,8 @@ A tiny, zero-dependency utility that tells you whether to use **black** or **whi
 
 It uses a logistic-regression model trained on color/contrast data — no magic thresholds, just a fast sigmoid.
 
+**[Try the interactive demo →](https://adousa.github.io/is-light-text/)**
+
 ## Install
 
 ```bash

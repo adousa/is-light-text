@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>is-light-text — Interactive Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 2rem 2.5rem 2.5rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 { font-size: 1.4rem; font-weight: 600; text-align: center; }
+    .subtitle { color: #8b949e; font-size: 0.85rem; text-align: center; margin-bottom: 1.5rem; }
+
+    /* ---- Saturation / Brightness panel ---- */
+    .sat-panel {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 10px;
+      cursor: crosshair;
+      overflow: hidden;
+      border: 1px solid #30363d;
+      touch-action: none;
+    }
+    .sat-panel .layer { position: absolute; inset: 0; border-radius: inherit; }
+    .sat-white { background: linear-gradient(to right, #fff, transparent); }
+    .sat-black { background: linear-gradient(to bottom, transparent, #000); }
+
+    .sat-thumb {
+      position: absolute;
+      width: 18px; height: 18px;
+      border: 2.5px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1.5px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.2);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ---- Hue slider ---- */
+    .hue-track {
+      position: relative;
+      width: 100%;
+      height: 18px;
+      border-radius: 9px;
+      margin-top: 12px;
+      cursor: pointer;
+      background: linear-gradient(to right,
+        hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%),
+        hsl(90,100%,50%), hsl(120,100%,50%), hsl(150,100%,50%),
+        hsl(180,100%,50%), hsl(210,100%,50%), hsl(240,100%,50%),
+        hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%),
+        hsl(360,100%,50%));
+      border: 1px solid #30363d;
+      touch-action: none;
+    }
+
+    .hue-thumb {
+      position: absolute;
+      top: 50%; width: 14px; height: 14px;
+      border: 2.5px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1.5px rgba(0,0,0,.3);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* ---- Inputs row ---- */
+    .inputs {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .input-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .input-group label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.85rem;
+      padding: 0.45rem 0;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { outline: none; border-color: #58a6ff; }
+
+    .input-group.hex-group { flex: 1.6; }
+
+    /* ---- Preview ---- */
+    .preview {
+      width: 100%;
+      height: 80px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-top: 14px;
+      transition: background 0.15s ease, color 0.15s ease;
+      border: 1px solid #30363d;
+    }
+
+    /* ---- Code result ---- */
+    .result {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #8b949e;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .result code {
+      background: #0d1117;
+      padding: 0.15em 0.5em;
+      border-radius: 6px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.8rem;
+    }
+    .result .val { font-weight: 600; color: #e6edf3; }
+
+    /* ---- Presets ---- */
+    .presets {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .preset {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .preset:hover { transform: scale(1.15); }
+    .preset.active { border-color: #58a6ff; }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #484f58;
+      text-align: center;
+    }
+    footer a { color: #58a6ff; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>is-light-text</h1>
+    <p class="subtitle">Pick a background color — see if you should use black or white text</p>
+
+    <div class="sat-panel" id="satPanel">
+      <div class="layer sat-white"></div>
+      <div class="layer sat-black"></div>
+      <div class="sat-thumb" id="satThumb"></div>
+    </div>
+
+    <div class="hue-track" id="hueTrack">
+      <div class="hue-thumb" id="hueThumb"></div>
+    </div>
+
+    <div class="inputs">
+      <div class="input-group hex-group">
+        <input type="text" id="hexInput" value="#2c3e50" maxlength="7" spellcheck="false">
+        <label>Hex</label>
+      </div>
+      <div class="input-group">
+        <input type="number" id="rInput" min="0" max="255" value="44">
+        <label>R</label>
+      </div>
+      <div class="input-group">
+        <input type="number" id="gInput" min="0" max="255" value="62">
+        <label>G</label>
+      </div>
+      <div class="input-group">
+        <input type="number" id="bInput" min="0" max="255" value="80">
+        <label>B</label>
+      </div>
+    </div>
+
+    <div class="preview" id="preview">
+      <span id="previewText">Sample Text</span>
+    </div>
+
+    <div class="result">
+      <div><code>isLightText([<span id="rgbValues" class="val">44, 62, 80</span>])</code></div>
+      <div>Returns <span id="returnValue" class="val">true</span> → use <strong id="recommendation">white</strong> text</div>
+    </div>
+
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <footer>
+    <a href="https://www.npmjs.com/package/black-or-white-text">npm</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/adousa/is-light-text">GitHub</a>
+  </footer>
+
+  <script>
+    /* ---- isLightText model ---- */
+    const COEFF = [0.027291010670827655, 0.0688366354332175, 0.006274975111680701];
+    const INTERCEPT = -13.936983449682737;
+    function isLightText(rgb) {
+      const s = rgb[0]*COEFF[0] + rgb[1]*COEFF[1] + rgb[2]*COEFF[2] + INTERCEPT;
+      return 1 / (1 + Math.exp(-s)) <= 0.5;
+    }
+
+    /* ---- Color math ---- */
+    function hsvToRgb(h, s, v) {
+      let r, g, b;
+      const i = Math.floor(h / 60) % 6;
+      const f = h / 60 - Math.floor(h / 60);
+      const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+      switch (i) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+      }
+      return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    }
+
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      let h = 0, s = max === 0 ? 0 : d / max, v = max;
+      if (d !== 0) {
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+          case g: h = ((b - r) / d + 2) * 60; break;
+          case b: h = ((r - g) / d + 4) * 60; break;
+        }
+      }
+      return [h, s, v];
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + [r, g, b].map(c => c.toString(16).padStart(2, "0")).join("");
+    }
+
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "");
+      return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
+    }
+
+    /* ---- State ---- */
+    let hsv = [200, 0.45, 0.31]; // initial: #2c3e50
+
+    /* ---- DOM refs ---- */
+    const satPanel = document.getElementById("satPanel");
+    const satThumb = document.getElementById("satThumb");
+    const hueTrack = document.getElementById("hueTrack");
+    const hueThumb = document.getElementById("hueThumb");
+    const hexInput = document.getElementById("hexInput");
+    const rInput = document.getElementById("rInput");
+    const gInput = document.getElementById("gInput");
+    const bInput = document.getElementById("bInput");
+    const preview = document.getElementById("preview");
+    const previewText = document.getElementById("previewText");
+    const rgbValues = document.getElementById("rgbValues");
+    const returnValue = document.getElementById("returnValue");
+    const recommendation = document.getElementById("recommendation");
+
+    /* ---- Render ---- */
+    function render() {
+      const rgb = hsvToRgb(hsv[0], hsv[1], hsv[2]);
+      const hex = rgbToHex(...rgb);
+      const light = isLightText(rgb);
+
+      satPanel.style.background = `hsl(${hsv[0]}, 100%, 50%)`;
+      satThumb.style.left = (hsv[1] * 100) + "%";
+      satThumb.style.top = ((1 - hsv[2]) * 100) + "%";
+      hueThumb.style.left = (hsv[0] / 360 * 100) + "%";
+
+      hexInput.value = hex;
+      rInput.value = rgb[0];
+      gInput.value = rgb[1];
+      bInput.value = rgb[2];
+
+      preview.style.background = hex;
+      preview.style.color = light ? "#fff" : "#000";
+
+      rgbValues.textContent = rgb.join(", ");
+      returnValue.textContent = String(light);
+      recommendation.textContent = light ? "white" : "black";
+
+      document.querySelectorAll(".preset").forEach(el => {
+        el.classList.toggle("active", el.dataset.hex === hex);
+      });
+    }
+
+    /* ---- Drag helpers ---- */
+    function drag(el, onMove) {
+      function pos(e) {
+        const r = el.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        const x = Math.max(0, Math.min(1, (t.clientX - r.left) / r.width));
+        const y = Math.max(0, Math.min(1, (t.clientY - r.top) / r.height));
+        onMove(x, y);
+        render();
+      }
+      function up() {
+        window.removeEventListener("mousemove", pos);
+        window.removeEventListener("mouseup", up);
+        window.removeEventListener("touchmove", pos);
+        window.removeEventListener("touchend", up);
+      }
+      el.addEventListener("mousedown", e => { e.preventDefault(); pos(e); window.addEventListener("mousemove", pos); window.addEventListener("mouseup", up); });
+      el.addEventListener("touchstart", e => { e.preventDefault(); pos(e); window.addEventListener("touchmove", pos, { passive: false }); window.addEventListener("touchend", up); });
+    }
+
+    drag(satPanel, (x, y) => { hsv[1] = x; hsv[2] = 1 - y; });
+    drag(hueTrack, (x) => { hsv[0] = x * 360; });
+
+    /* ---- Text inputs ---- */
+    hexInput.addEventListener("input", () => {
+      if (/^#[0-9a-fA-F]{6}$/.test(hexInput.value)) {
+        const rgb = hexToRgb(hexInput.value);
+        hsv = rgbToHsv(...rgb);
+        render();
+      }
+    });
+
+    function onRgbInput() {
+      const r = parseInt(rInput.value) || 0;
+      const g = parseInt(gInput.value) || 0;
+      const b = parseInt(bInput.value) || 0;
+      hsv = rgbToHsv(
+        Math.max(0, Math.min(255, r)),
+        Math.max(0, Math.min(255, g)),
+        Math.max(0, Math.min(255, b))
+      );
+      render();
+    }
+    rInput.addEventListener("input", onRgbInput);
+    gInput.addEventListener("input", onRgbInput);
+    bInput.addEventListener("input", onRgbInput);
+
+    /* ---- Presets ---- */
+    const presetColors = [
+      "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#1abc9c",
+      "#3498db", "#9b59b6", "#2c3e50", "#ecf0f1", "#000000",
+      "#e84393", "#fd79a8", "#00cec9", "#6c5ce7", "#ffffff",
+    ];
+    const presetsEl = document.getElementById("presets");
+    presetColors.forEach(hex => {
+      const el = document.createElement("div");
+      el.className = "preset";
+      el.style.background = hex;
+      el.dataset.hex = hex;
+      el.addEventListener("click", () => {
+        hsv = rgbToHsv(...hexToRgb(hex));
+        render();
+      });
+      presetsEl.appendChild(el);
+    });
+
+    render();
+  </script>
+</body>
+</html>
