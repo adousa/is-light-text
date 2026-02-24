@@ -1,6 +1,6 @@
 {
   "name": "black-or-white-text",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Determines whether to use black or white text on a given background color for optimal readability",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
