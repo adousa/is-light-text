@@ -17,9 +17,14 @@ npm install black-or-white-text
 ```ts
 import isLightText from "black-or-white-text";
 
-isLightText([0, 0, 0]);       // true  → use white text on black
-isLightText([255, 255, 255]); // false → use black text on white
-isLightText([44, 62, 80]);    // true  → use white text on dark blue
+// Hex strings
+isLightText("#000000");        // true  → use white text on black
+isLightText("#fff");           // false → use black text on white
+isLightText("2c3e50");        // true  → use white text on dark blue
+
+// RGB tuples
+isLightText([0, 0, 0]);       // true
+isLightText([255, 255, 255]); // false
 ```
 
 ### CommonJS
@@ -30,11 +35,11 @@ const { isLightText } = require("black-or-white-text");
 
 ## API
 
-### `isLightText(rgb: [number, number, number]): boolean`
+### `isLightText(color: [number, number, number] | string): boolean`
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `rgb` | `[number, number, number]` | An RGB tuple where each value is 0–255 |
+| `color` | `[number, number, number] \| string` | An RGB tuple (each 0–255) or a hex string (`"#fff"`, `"#ffffff"`, `"fff"`, `"ffffff"`) |
 
 **Returns** `true` if you should use light (white) text, `false` if dark (black) text is better.
 
