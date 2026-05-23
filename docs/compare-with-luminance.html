@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>is-light-text — Interactive Demo</title>
+  <title>isLightText vs W3C luminance — Side-by-side Demo</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -24,7 +24,7 @@
       border: 1px solid #30363d;
       border-radius: 16px;
       padding: 2rem 2.5rem 2.5rem;
-      max-width: 420px;
+      max-width: 560px;
       width: 100%;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
@@ -46,6 +46,15 @@
     .sat-panel .layer { position: absolute; inset: 0; border-radius: inherit; }
     .sat-white { background: linear-gradient(to right, #fff, transparent); }
     .sat-black { background: linear-gradient(to bottom, transparent, #000); }
+
+    .sat-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
 
     .sat-thumb {
       position: absolute;
@@ -86,6 +95,24 @@
       pointer-events: none;
     }
 
+    /* ---- Boundary legend / trail controls ---- */
+    .legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: #8b949e;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-swatch {
+      display: inline-block;
+      width: 18px; height: 3px;
+      border-radius: 1px;
+    }
+
     /* ---- Inputs row ---- */
     .inputs {
       display: flex;
@@ -124,37 +151,90 @@
 
     .input-group.hex-group { flex: 1.6; }
 
-    /* ---- Preview ---- */
+    /* ---- Compare grid (two algorithms side-by-side) ---- */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .algo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .algo-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+      text-align: center;
+    }
+    .algo-title .badge {
+      display: inline-block;
+      background: #21262d;
+      color: #e6edf3;
+      padding: 0.05em 0.45em;
+      border-radius: 4px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0;
+    }
+
     .preview {
       width: 100%;
       height: 80px;
-      border-radius: 10px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1rem;
       font-weight: 700;
-      margin-top: 14px;
       transition: background 0.15s ease, color 0.15s ease;
       border: 1px solid #30363d;
     }
 
-    /* ---- Code result ---- */
-    .result {
-      margin-top: 14px;
-      font-size: 0.82rem;
+    .algo-result {
+      font-size: 0.72rem;
       color: #8b949e;
       text-align: center;
-      line-height: 1.7;
+      line-height: 1.5;
     }
-    .result code {
-      background: #0d1117;
-      padding: 0.15em 0.5em;
-      border-radius: 6px;
+    .algo-result .val { font-weight: 600; color: #e6edf3; }
+    .algo-result .pick {
+      display: inline-block;
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
       font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 0.8rem;
     }
-    .result .val { font-weight: 600; color: #e6edf3; }
+    .algo-result .pick.white { background: #fff; color: #000; }
+    .algo-result .pick.black { background: #000; color: #fff; border: 1px solid #30363d; }
+
+    /* ---- Shared color readout ---- */
+    .readout {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: #8b949e;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .readout .val { font-weight: 600; color: #e6edf3; }
+    .readout .diff {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 0.1em 0.5em;
+      border-radius: 4px;
+      font-size: 0.72rem;
+    }
+    .readout .diff.agree { background: #1f2d1f; color: #7ee787; }
+    .readout .diff.disagree { background: #2d1f1f; color: #ff7b72; }
 
     /* ---- Presets ---- */
     .presets {
@@ -186,17 +266,26 @@
 </head>
 <body>
   <div class="card">
-    <h1>is-light-text</h1>
-    <p class="subtitle">Pick a background color — see if you should use black or white text</p>
+    <h1>isLightText vs W3C luminance</h1>
+    <p class="subtitle">Pick a background — compare both algorithms side&#8209;by&#8209;side</p>
 
     <div class="sat-panel" id="satPanel">
       <div class="layer sat-white"></div>
       <div class="layer sat-black"></div>
+      <svg class="sat-svg" id="satSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polyline id="boundaryLight" fill="none" stroke="#58a6ff" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+        <polyline id="boundaryDark"  fill="none" stroke="#ff7b72" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 1.5" vector-effect="non-scaling-stroke" />
+      </svg>
       <div class="sat-thumb" id="satThumb"></div>
     </div>
 
     <div class="hue-track" id="hueTrack">
       <div class="hue-thumb" id="hueThumb"></div>
+    </div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch" style="background:#58a6ff"></span>isLightText boundary</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#ff7b72;background-image:repeating-linear-gradient(to right,#ff7b72 0 3px,transparent 3px 5px)"></span>W3C luminance boundary</span>
     </div>
 
     <div class="inputs">
@@ -218,33 +307,66 @@
       </div>
     </div>
 
-    <div class="preview" id="preview">
-      <span id="previewText">Sample Text</span>
+    <div class="compare">
+      <div class="algo">
+        <div class="algo-title"><span class="badge">isLightText</span></div>
+        <div class="preview" id="previewLight"><span>Sample Text</span></div>
+        <div class="algo-result">
+          Returns <span id="lightReturn" class="val">true</span> → use
+          <span id="lightPick" class="pick white">white</span> text
+        </div>
+      </div>
+
+      <div class="algo">
+        <div class="algo-title"><span class="badge">W3C luminance</span></div>
+        <div class="preview" id="previewDark"><span>Sample Text</span></div>
+        <div class="algo-result">
+          Returns <span id="darkReturn" class="val">true</span> → use
+          <span id="darkPick" class="pick white">white</span> text
+        </div>
+      </div>
     </div>
 
-    <div class="result">
-      <div><code>isLightText([<span id="rgbValues" class="val">44, 62, 80</span>])</code></div>
-      <div>Returns <span id="returnValue" class="val">true</span> → use <strong id="recommendation">white</strong> text</div>
+    <div class="readout">
+      <div><span class="val" id="hexValue">#2c3e50</span> · rgb(<span id="rgbValues">44, 62, 80</span>)</div>
+      <div>luminance = <span id="lumValue" class="val">0.000</span> · sigmoid = <span id="sigValue" class="val">0.000</span></div>
+      <div><span id="agreement" class="diff agree">algorithms agree</span></div>
     </div>
 
     <div class="presets" id="presets"></div>
   </div>
 
   <footer>
-    <a href="https://www.npmjs.com/package/black-or-white-text">npm</a>
+    <a href="https://www.w3.org/TR/WCAG20/#relativeluminancedef">WCAG relative luminance</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com/adousa/is-light-text">GitHub</a>
-    &nbsp;·&nbsp;
-    <a href="compare-with-luminance.html">Compare with luminance</a>
+    <a href="https://www.npmjs.com/package/black-or-white-text">black-or-white-text</a>
   </footer>
 
   <script>
-    /* ---- isLightText model ---- */
+    /* ---- isLightText (logistic regression model)
+       Returns true when white text should be used on the given background. */
     const COEFF = [0.027291010670827655, 0.0688366354332175, 0.006274975111680701];
     const INTERCEPT = -13.936983449682737;
-    function isLightText(rgb) {
+    function sigmoidScore(rgb) {
       const s = rgb[0]*COEFF[0] + rgb[1]*COEFF[1] + rgb[2]*COEFF[2] + INTERCEPT;
-      return 1 / (1 + Math.exp(-s)) <= 0.5;
+      return 1 / (1 + Math.exp(-s));
+    }
+    function isLightText(rgb) {
+      return sigmoidScore(rgb) <= 0.5;
+    }
+
+    /* ---- is-dark-color (W3C relative luminance) ----
+       https://github.com/gion/is-dark-color
+       Based on https://www.w3.org/TR/WCAG20/#relativeluminancedef
+       Returns true when the color is dark (so white text should be used). */
+    function luminanceOf(rgb) {
+      const [r, g, b] = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255].map(v =>
+        v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+      );
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    function isDarkColor(rgb) {
+      return luminanceOf(rgb) <= 0.179;
     }
 
     /* ---- Color math ---- */
@@ -299,34 +421,89 @@
     const rInput = document.getElementById("rInput");
     const gInput = document.getElementById("gInput");
     const bInput = document.getElementById("bInput");
-    const preview = document.getElementById("preview");
-    const previewText = document.getElementById("previewText");
+    const previewLight = document.getElementById("previewLight");
+    const previewDark = document.getElementById("previewDark");
+    const lightReturn = document.getElementById("lightReturn");
+    const darkReturn = document.getElementById("darkReturn");
+    const lightPick = document.getElementById("lightPick");
+    const darkPick = document.getElementById("darkPick");
+    const hexValue = document.getElementById("hexValue");
     const rgbValues = document.getElementById("rgbValues");
-    const returnValue = document.getElementById("returnValue");
-    const recommendation = document.getElementById("recommendation");
+    const lumValue = document.getElementById("lumValue");
+    const sigValue = document.getElementById("sigValue");
+    const agreement = document.getElementById("agreement");
+    const boundaryLight = document.getElementById("boundaryLight");
+    const boundaryDark = document.getElementById("boundaryDark");
+
+    /* ---- Boundary computation ----
+       For a given hue, walk along saturation and binary-search the value (brightness)
+       where the predicate flips. Output is a viewBox-percentage polyline. */
+    function computeBoundary(hue, predicate, samples = 80) {
+      const pts = [];
+      for (let i = 0; i <= samples; i++) {
+        const s = i / samples;
+        const pTop = predicate(hsvToRgb(hue, s, 1));
+        const pBot = predicate(hsvToRgb(hue, s, 0));
+        if (pTop === pBot) continue;
+        let lo = 0, hi = 1;
+        for (let j = 0; j < 14; j++) {
+          const mid = (lo + hi) / 2;
+          if (predicate(hsvToRgb(hue, s, mid)) === pBot) lo = mid; else hi = mid;
+        }
+        const v = (lo + hi) / 2;
+        pts.push((s * 100).toFixed(2) + "," + ((1 - v) * 100).toFixed(2));
+      }
+      return pts.join(" ");
+    }
+
+    let lastHue = null;
+    function updateBoundaries() {
+      if (lastHue === hsv[0]) return;
+      lastHue = hsv[0];
+      boundaryLight.setAttribute("points", computeBoundary(hsv[0], isLightText));
+      boundaryDark.setAttribute("points", computeBoundary(hsv[0], isDarkColor));
+    }
 
     /* ---- Render ---- */
     function render() {
       const rgb = hsvToRgb(hsv[0], hsv[1], hsv[2]);
       const hex = rgbToHex(...rgb);
       const light = isLightText(rgb);
+      const dark = isDarkColor(rgb);
+      const lum = luminanceOf(rgb);
+      const sig = sigmoidScore(rgb);
 
       satPanel.style.background = `hsl(${hsv[0]}, 100%, 50%)`;
       satThumb.style.left = (hsv[1] * 100) + "%";
       satThumb.style.top = ((1 - hsv[2]) * 100) + "%";
       hueThumb.style.left = (hsv[0] / 360 * 100) + "%";
+      updateBoundaries();
 
       hexInput.value = hex;
       rInput.value = rgb[0];
       gInput.value = rgb[1];
       bInput.value = rgb[2];
 
-      preview.style.background = hex;
-      preview.style.color = light ? "#fff" : "#000";
+      previewLight.style.background = hex;
+      previewLight.style.color = light ? "#fff" : "#000";
+      previewDark.style.background = hex;
+      previewDark.style.color = dark ? "#fff" : "#000";
 
+      lightReturn.textContent = String(light);
+      darkReturn.textContent = String(dark);
+      lightPick.textContent = light ? "white" : "black";
+      lightPick.className = "pick " + (light ? "white" : "black");
+      darkPick.textContent = dark ? "white" : "black";
+      darkPick.className = "pick " + (dark ? "white" : "black");
+
+      hexValue.textContent = hex;
       rgbValues.textContent = rgb.join(", ");
-      returnValue.textContent = String(light);
-      recommendation.textContent = light ? "white" : "black";
+      lumValue.textContent = lum.toFixed(3);
+      sigValue.textContent = sig.toFixed(3);
+
+      const agree = light === dark;
+      agreement.textContent = agree ? "algorithms agree" : "algorithms disagree";
+      agreement.className = "diff " + (agree ? "agree" : "disagree");
 
       document.querySelectorAll(".preset").forEach(el => {
         el.classList.toggle("active", el.dataset.hex === hex);
